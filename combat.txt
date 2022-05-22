@@ -1,0 +1,2 @@
+Round, Name, actionType, attacksMade, attacksHit, spellSlotLevel, damageOutput, damageTotal, healingOutput, healingTotal
+
