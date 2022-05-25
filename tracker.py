@@ -4,7 +4,7 @@
 #Any modifications you perform upon it may have unintended consequences when the script is run
 #
 #Be sure to have the accompanying text file in the same directory as this script.
-#adjust the file path on line 57 to match the location
+#adjust the file path on line 61 to match the location
 #
 #Script assumes either melee or spell action taken on a turn with a healing option for any secondary actions.
 #Script also assumes combat ends at end of full turn currently
@@ -12,7 +12,7 @@
 
 #global imports
 import csv
-
+import sys
 #class for entry of player/enemy
 class Creature:
     #definition
@@ -58,7 +58,7 @@ class Creature:
 def main():
 
     #open text file to write data to for storage, change the filepath here to match your set up
-    data = open('/home/rbahr/8/combat.txt', 'a')
+    data = open('combat.txt', 'a')
 
     #write handler
     writer = csv.writer(data)
@@ -80,84 +80,165 @@ def main():
         name = input("Enter creatures name: ")
         c = Creature(name)
         creatures.append(c)
-        choice = input("Add another creature? (Y/N)? \n")
+        choice = input("Add another creature? (Y/N): ")
+        choice = validationYesNo(choice)
         if choice == "Y":
-            print(c.name)
             continue
         if choice == "N":
             break
-        else:
-            print("Y or N only")
-            continue
 
     #while loop to keep looping through creatures sequentially and upping round counter
-    print("Starting Combat \n")
+    print("\nStarting Combat \nRound ", round)
     while combat == "N":
 
         for c in creatures:
             combatRound(c, round, writer)
-        #end combat
-        combat = input("End Combat? (Y/N)")
+        #end combat after all creatures have had a turn in the round
+        combat = input("\nEnd Combat? (Y/N): ")
+        combat = validationYesNo(combat)
         if combat == "Y":
             break
         if combat == "N":
             round += 1
+            print("\nRound ", round)
             continue
+
     data.close()
+
+    #Logic to start a 'new' combat session or end program entirely
+    cont = input("\nStart new combat? (Y/N): ")
+    cont = validationYesNo(cont)
+    if cont == "Y":
+        main()
+    if cont == "N":
+        print("\nEnding program")
+
 ############################################################
 #secondary method called to run individual round logic for creature
 def combatRound(c, round, writer):
-    print(c.name + "'s Turn")
+    print("\n", c.name + "'s Turn")
     action = input("(W)eapon or (S)pell? ")
-
-    #weapon damage logic
+    action = validationWS(action)
+    #weapon damage logic and validation
     if action == "W":
         c.setactionType(action)
-        attacksMade = input("Attacks Made: ")
-        hits = input("Attacks Hit: ")
+
+        attacksMade = input("# of Attacks Made: ")
+        validationNum(attacksMade)
+        c.setattacksMade(int(attacksMade))
+
+        hits = input("# of Attacks Hit: ")
+        validationNum(hits)
+        c.setattacksHit(int(hits))
+
         damage = input("Damage Dealt: ")
-        c.setattacksMade(attacksMade)
-        c.setattacksHit(hits)
-        c.setdamageOutput(damage)
+        validationNum(damage)
+        c.setdamageOutput(int(damage))
         c.setdamageTotal(int(damage))
-        #sets spell slot used to 0
-        #c.setspellSlotLevel(0)
+
         #healing check
-        heal = input("Healing? ")
+        heal = input("Healing? (Y/N): ")
+        heal = validationYesNo(heal)
         if heal == "Y":
             healing = input("Amount: ")
-            c.sethealingOutput(healing)
+            validationNum(healing)
+            c.sethealingOutput(int(healing))
             c.sethealingTotal(int(healing))
         if heal == "N":
             healing = 0
-            c.sethealingOutput(healing)
+            c.sethealingOutput(int(healing))
             c.sethealingTotal(int(healing))
+
     #spell damage logic
     if action == "S":
         c.setactionType(action)
         slot = input("Spell Slot Used?: ")
-        c.setspellSlotLevel(slot)
-        hits = input("Spell Hits: ")
-        c.setattacksHit(hits)
+        validationNum(slot)
+        c.setspellSlotLevel(int(slot))
+
+        attacksMade = input("# of Spell Attacks Made: ")
+        validationNum(attacksMade)
+        c.setattacksMade(int(attacksMade))
+
+        hits = input("# of Spell Hits: ")
+        validationNum(hits)
+        c.setattacksHit(int(hits))
+
         spellDamage = input("Damage: ")
-        c.setdamageOutput(spellDamage)
+        validationNum(spellDamage)
+        c.setdamageOutput(int(spellDamage))
         c.setdamageTotal(int(spellDamage))
+
         #healing check
-        heal = input("Healing? (Y/N)")
+        heal = input("Healing? (Y/N): ")
+        heal = validationYesNo(heal)
         if heal == "Y":
             healing = input("Amount: ")
-            c.sethealingOutput(healing)
+            validationNum(healing)
+            c.sethealingOutput(int(healing))
             c.sethealingTotal(int(healing))
         if heal == "N":
             healing = 0
             c.sethealingOutput(healing)
             c.sethealingTotal(int(healing))
+
     #turn summary, writes all data to the text file
     row = [round, c.name, c.actionType, c.attacksMade, c.attacksHit, c.spellSlotLevel, c.damageOutput, c.damageTotal, c.healingOutput, c.healingTotal]
     #validation check to ensure all values assigned appropriately
     #print(row)
     writer.writerow(row)
-    print("\n")
+
+############################################################
+#Input Validation for numerics
+
+def validationNum(input):
+    try:
+        output = int(input)
+        return output
+    except Exception as e:
+        print("Please enter integers only \n")
+        print(e)
+        print("\nEnding program")
+        sys.exit()
+        quit()
+
+############################################################
+#Input Validation for Y/N
+
+def validationYesNo(input):
+    try:
+        input1 = input.upper()
+        if input1 in ['Y','N']:
+            return input1
+        #else:
+         #   print("\n Please enter 'Y','y','N', or 'n' only \n")
+    except Exception as e:
+        print(e)
+        print("\nEnding program")
+        sys.exit()
+        quit()
+    else:
+        print("Please enter 'Y','y','N', or 'n' only \n")
+        print("\nEnding program")
+        sys.exit()
+        quit()
+
+############################################################
+
+#Input Validation for Weapon or Spell
+
+def validationWS(input):
+
+    try:
+        if input in {'W','w','S','s'}:
+            output = input.upper()
+            return output
+    except Exception as e:
+        print(e)
+        print("\nEnding character's round")
+    else:
+        print("Please enter 'W','w','S', or 's' only \n")
+        print("\nEnding character's round")
 
 ############################################################
 
